@@ -1,10 +1,10 @@
 compute_environment: LOCAL_MACHINE
+deepspeed_config:
+  deepspeed_config_file: ds_stage2.json
+distributed_type: DEEPSPEED
+downcast_bf16: 'no'
+gpu_ids: 0,1
+main_training_function: main
 mixed_precision: bf16
 num_machines: 1
-num_processes: 2         # 2 training ranks
-gpu_ids: 2,3             # GPUs reserved for training
-main_training_function: main
-downcast_bf16: no
-distributed_type: DEEPSPEED
-deepspeed_config:
- deepspeed_config_file: ds_stage2.json
+num_processes: 2
