@@ -9,7 +9,8 @@ pip install \
     tqdm \
     peft \
     trl[vllm] \
-    deepspeed
+    deepspeed \
+    wandb
 
     torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
