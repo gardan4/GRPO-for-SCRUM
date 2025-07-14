@@ -61,19 +61,22 @@ def calculate_vllm_tensor_parallel_size(num_gpus):
     else:
         return 8  # Max reasonable tensor parallel size
 
-def generate_training_script(gpu_ids, batch_size, gradient_accumulation, 
+def generate_training_script(train_gpus, vllm_gpus, batch_size, gradient_accumulation, 
                            script_name="TRL_TRAINING_COT_AUTO.sh"):
     """Generate training script with correct GPU and batch settings"""
     
-    num_gpus = len(gpu_ids.split(','))
-    vllm_tensor_parallel_size = calculate_vllm_tensor_parallel_size(num_gpus)
+    num_train_gpus = len(train_gpus.split(','))
+    num_vllm_gpus = len(vllm_gpus.split(','))
+    vllm_tensor_parallel_size = calculate_vllm_tensor_parallel_size(num_vllm_gpus)
     
     script_content = f"""#!/bin/bash
-# Auto-generated training script for GPUs: {gpu_ids}
-# Effective batch size: {batch_size * num_gpus * gradient_accumulation}
+# Auto-generated training script
+# Training GPUs: {train_gpus}
+# vLLM GPUs: {vllm_gpus}
+# Effective batch size: {batch_size * num_train_gpus * gradient_accumulation}
 # vLLM tensor parallel size: {vllm_tensor_parallel_size}
 
-CUDA_VISIBLE_DEVICES={gpu_ids} accelerate launch --config_file my_accel.yaml \\
+CUDA_VISIBLE_DEVICES={train_gpus} accelerate launch --config_file my_accel.yaml \\
     train_trl_cot.py \\
     --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B \\
     --dataset ./data/sprint_goals_training_data-qwen-3B.jsonl \\
@@ -131,9 +134,31 @@ CUDA_VISIBLE_DEVICES={gpu_ids} python -m trl.scripts.vllm_serve \\
     os.chmod(script_name, 0o755)
     print(f"[OK] Generated {script_name}")
 
+def split_gpus(gpu_ids):
+    """Split GPU IDs into training and vLLM groups"""
+    gpu_list = gpu_ids.split(',')
+    num_gpus = len(gpu_list)
+    
+    # Split GPUs evenly between training and vLLM
+    mid_point = num_gpus // 2
+    
+    if num_gpus == 1:
+        # Single GPU: use for both
+        return gpu_ids, gpu_ids
+    elif num_gpus == 2:
+        # 2 GPUs: 1 for training, 1 for vLLM
+        return gpu_list[0], gpu_list[1]
+    else:
+        # More GPUs: split roughly evenly
+        train_gpus = ','.join(gpu_list[:mid_point])
+        vllm_gpus = ','.join(gpu_list[mid_point:])
+        return train_gpus, vllm_gpus
+
 def main():
     parser = argparse.ArgumentParser(description="Configure GPU settings for GRPO training")
     parser.add_argument("--gpus", required=True, help="GPU IDs (e.g., '0,1,2,3')")
+    parser.add_argument("--train-gpus", help="GPU IDs for training (e.g., '0,1')")
+    parser.add_argument("--vllm-gpus", help="GPU IDs for vLLM inference (e.g., '2,3')")
     parser.add_argument("--target-batch-size", type=int, default=48, 
                        help="Target effective batch size")
     parser.add_argument("--config-file", default="my_accel.yaml",
@@ -141,24 +166,38 @@ def main():
     
     args = parser.parse_args()
     
-    print(f"[CONFIG] Configuring for GPUs: {args.gpus}")
+    # Determine training and vLLM GPU allocation
+    if args.train_gpus and args.vllm_gpus:
+        # Explicit GPU allocation
+        train_gpus = args.train_gpus
+        vllm_gpus = args.vllm_gpus
+        print(f"[CONFIG] Using explicit GPU allocation:")
+        print(f"[TRAIN] Training GPUs: {train_gpus}")
+        print(f"[VLLM] vLLM GPUs: {vllm_gpus}")
+    else:
+        # Auto-split GPUs
+        train_gpus, vllm_gpus = split_gpus(args.gpus)
+        print(f"[CONFIG] Auto-splitting GPUs: {args.gpus}")
+        print(f"[TRAIN] Training GPUs: {train_gpus}")
+        print(f"[VLLM] vLLM GPUs: {vllm_gpus}")
+    
     print(f"[BATCH] Target batch size: {args.target_batch_size}")
     
-    # Update accelerate config
-    num_gpus = update_accelerate_config(args.gpus, args.config_file)
+    # Update accelerate config for training GPUs
+    num_train_gpus = update_accelerate_config(train_gpus, args.config_file)
     
-    # Calculate batch settings
+    # Calculate batch settings for training GPUs
     batch_size, gradient_accumulation, actual_batch_size = calculate_batch_settings(
-        num_gpus, args.target_batch_size
+        num_train_gpus, args.target_batch_size
     )
     
-    print(f"[BATCH] Batch settings: {batch_size} per GPU × {gradient_accumulation} grad_accum × {num_gpus} GPUs = {actual_batch_size} effective")
+    print(f"[BATCH] Batch settings: {batch_size} per GPU × {gradient_accumulation} grad_accum × {num_train_gpus} GPUs = {actual_batch_size} effective")
     
     # Generate training script
-    training_script = generate_training_script(args.gpus, batch_size, gradient_accumulation)
+    training_script = generate_training_script(train_gpus, vllm_gpus, batch_size, gradient_accumulation)
     
     # Generate vLLM script
-    generate_vllm_script(args.gpus)
+    generate_vllm_script(vllm_gpus)
     
     print(f"\\n[READY] Ready to train! Run: ./{training_script}")
     print(f"[VLLM] For vLLM inference: ./start_vllm_server.sh")

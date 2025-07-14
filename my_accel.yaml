@@ -3,8 +3,8 @@ deepspeed_config:
   deepspeed_config_file: ds_stage2.json
 distributed_type: DEEPSPEED
 downcast_bf16: 'no'
-gpu_ids: 0,1
+gpu_ids: '0'
 main_training_function: main
 mixed_precision: bf16
 num_machines: 1
-num_processes: 2
+num_processes: 1

@@ -1,9 +1,11 @@
 #!/bin/bash
-# Auto-generated training script for GPUs: 0,1
+# Auto-generated training script
+# Training GPUs: 0
+# vLLM GPUs: 1
 # Effective batch size: 48
 # vLLM tensor parallel size: 1
 
-CUDA_VISIBLE_DEVICES=0,1 accelerate launch --config_file my_accel.yaml \
+CUDA_VISIBLE_DEVICES=0 accelerate launch --config_file my_accel.yaml \
     train_trl_cot.py \
     --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B \
     --dataset ./data/sprint_goals_training_data-qwen-3B.jsonl \
@@ -17,7 +19,7 @@ CUDA_VISIBLE_DEVICES=0,1 accelerate launch --config_file my_accel.yaml \
     --epsilon 0.25 \
     --save_strategy epoch \
     --batch_size 2 \
-    --gradient_accumulation_steps 12 \
+    --gradient_accumulation_steps 24 \
     --logging_steps 5 \
     --log_completions \
     --num_completions_to_print 1 \
