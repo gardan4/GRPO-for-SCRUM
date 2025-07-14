@@ -26,29 +26,38 @@ logger = get_logger(__name__)
 # ─── Prompt (no <think> tag inside) ─────────────────────────────────────────────
 PROMPT_TEMPLATE = ("""
                     <task>
-                    Generate well-formed user stories from the given sprint goal.
+                    Generate well-formed user stories from the given sprint goal and team context.
                     </task>
                    
                     <role>
                     You are an experienced Scrum Master creating the user stories for this sprint.
                     </role>
 
+                    <team_context>
+                    Tech Stack: {tech_stack}
+                    Application: {application_domain}
+                    Team: {team_composition}
+                    Sprint Focus: {sprint_focus}
+                    Product Stage: {product_stage}
+                    </team_context>
+
+                    <sprint_planning_notes>
+                    {sprint_goal_notes}
+                    </sprint_planning_notes>
+
                     <format>
                     Each story must be one line and follow:
                     As a [role], I want [action], so that [benefit]
                     Where you need to fill in the [role], [action], and [benefit] parts with
-                    appropriate content based on the sprint goal.
+                    appropriate content based on the sprint goal and context.
                     </format>
 
                     <constraints>
                     • Use exactly one line per story  
                     • No headings, markdown, or bullet characters  
                     • Do not add extra commentary outside the stories  
+                    • Consider the team context and technical stack when creating stories
                     </constraints>
-
-                    <sprint_goal>
-                    {sprint_goal}
-                    </sprint_goal>
 
                     <think>
                 """)
@@ -132,8 +141,36 @@ def main():
     train_raw, val_raw = parts["train"], parts["test"]
 
     def preprocess(ex):
+        # Extract context fields, use defaults if not present
+        context = ex.get("team_context", {})
+        
+        # For backward compatibility with old dataset format
+        if not context:
+            # Provide sensible defaults
+            tech_stack = "Not specified"
+            application_domain = "Not specified"
+            team_composition = "Not specified"
+            sprint_focus = "General development"
+            product_stage = "Not specified"
+            sprint_goal_notes = ex.get("sprint_goal", "")
+        else:
+            # Extract from the new context
+            tech_stack = context.get("tech_stack", "Not specified")
+            application_domain = context.get("application_domain", "Not specified")
+            team_composition = context.get("team_composition", "Not specified")
+            sprint_focus = context.get("sprint_focus", "General development")
+            product_stage = context.get("product_stage", "Not specified")
+            sprint_goal_notes = context.get("sprint_goal_notes", ex.get("sprint_goal", ""))
+        
         return dict(
-            prompt=PROMPT_TEMPLATE.format(sprint_goal=ex["sprint_goal"]),
+            prompt=PROMPT_TEMPLATE.format(
+                tech_stack=tech_stack,
+                application_domain=application_domain,
+                team_composition=team_composition,
+                sprint_focus=sprint_focus,
+                product_stage=product_stage,
+                sprint_goal_notes=sprint_goal_notes
+            ),
             reference_stories=ex.get("formatted_issues", "")
         )
 
@@ -143,6 +180,8 @@ def main():
     logger.info(f"Training samples: {len(train_ds)} | Validation: {len(val_ds)}")
                     # A100-40 GB example
 
+
+    # ─── Model & PEFT ───────────────────────────────────────────────────────────
     from accelerate import Accelerator
     current_device = Accelerator().local_process_index
 
