@@ -18,7 +18,7 @@ python3 setup_gpus.py --gpus 0,1,2,3 --target-batch-size 48
 python3 setup_gpus.py --gpus 0,1,2,3,4,5,6,7 --target-batch-size 96
 
 # Explicit GPU allocation (recommended for specific setups)
-python3 setup_gpus.py --train-gpus 0,1 --vllm-gpus 2,3 --target-batch-size 48
+python3 setup_gpus.py --gpus 0,1,2,3 --train-gpus 0,1 --vllm-gpus 2,3 --target-batch-size 48
 python3 setup_gpus.py --gpus 0,1 --train-gpus 0 --vllm-gpus 1 --target-batch-size 48
 
 ```

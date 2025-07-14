@@ -143,29 +143,9 @@ def main():
     logger.info(f"Training samples: {len(train_ds)} | Validation: {len(val_ds)}")
                     # A100-40 GB example
 
-    if args.load_4bit:
-        from transformers import BitsAndBytesConfig
-        bnb_cfg = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.bfloat16 if args.bf16 else torch.float16,
-            bnb_4bit_quant_type="nf4",
-        )
-        base_model = AutoModelForCausalLM.from_pretrained(
-            args.model,
-            device_map="auto",
-            quantization_config=bnb_cfg,
-            trust_remote_code=True,
-        )
-    else:
-        dtype = torch.bfloat16 if args.bf16 else torch.float16
-        base_model = AutoModelForCausalLM.from_pretrained(
-            args.model,
-            torch_dtype=dtype,
-            device_map="auto",
-            trust_remote_code=True,
-        )
+    from accelerate import Accelerator
+    current_device = Accelerator().local_process_index
 
-    # ── ② Attach LoRA adapters (PEFT) ────────────────────────────────
     lora_cfg = LoraConfig(
         r=args.lora_r,
         lora_alpha=args.lora_alpha,
@@ -176,7 +156,30 @@ def main():
             "gate_proj", "up_proj", "down_proj", "wi", "wo"
         ],
     )
-    model = get_peft_model(base_model, lora_cfg)
+    
+    if args.load_4bit:
+        bnb_cfg = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.bfloat16 if args.bf16 else torch.float16,
+            bnb_4bit_quant_type="nf4",
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            args.model,
+            device_map={"": current_device},
+            quantization_config=bnb_cfg,
+            trust_remote_code=True,
+        )
+    else:
+        dtype = torch.bfloat16 if args.bf16 else torch.float16
+        model = AutoModelForCausalLM.from_pretrained(
+            args.model,
+            torch_dtype=dtype,
+            device_map={"": current_device},  # Use current_device like working script
+            trust_remote_code=True,
+        )
+    
+    # Apply PEFT after loading
+    model = get_peft_model(model, lora_cfg)
     model.print_trainable_parameters()
 
     # ─── GRPO config ───────────────────────────────────────────────────────────
