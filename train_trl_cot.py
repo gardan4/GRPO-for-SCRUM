@@ -79,7 +79,7 @@ def main():
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--gradient_accumulation_steps", type=int, default=1)
     parser.add_argument("--num_generations", type=int, default=3)
-    parser.add_argument("--max_prompt_length", type=int, default=2048)
+    parser.add_argument("--max_prompt_length", type=int, default=700)
     parser.add_argument("--max_completion_length", type=int, default=1024)
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--do_sample", action="store_true", default=True)
