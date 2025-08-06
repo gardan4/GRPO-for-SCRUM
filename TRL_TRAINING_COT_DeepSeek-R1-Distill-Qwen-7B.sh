@@ -4,7 +4,7 @@ CUDA_VISIBLE_DEVICES=2,3 accelerate launch --config_file my_accel_deepspeed.yaml
     --dataset ./data/enhanced_sprint_training_data.jsonl \
     --output_dir ./DeepSeek-R1-Distill-Qwen-7B \
     --epochs 1 \
-    --lr 1e-6 \
+    --lr 2e-6 \
     --temperature 0.6 \
     --top_p 0.95 \
     --max_completion_length 1024 \

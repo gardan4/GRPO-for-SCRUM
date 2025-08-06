@@ -4,7 +4,7 @@ CUDA_VISIBLE_DEVICES=1 accelerate launch --config_file my_accel.yaml \
     --dataset ./data/enhanced_sprint_training_data.jsonl \
     --output_dir ./Qwen2.5-1.5B-Instruct \
     --epochs 1 \
-    --lr 1e-6 \
+    --lr 2e-6 \
     --temperature 0.6 \
     --top_p 0.95 \
     --max_completion_length 1024 \
