@@ -286,7 +286,7 @@ def p_extraneous(completions, **kwargs):
 
 # ordered list & weights
 reward_fns   = [r_regex, r_clause, r_coverage, r_count, r_length, p_redundancy, p_extraneous]
-reward_weights= [0.15,    0.20,    0.30,      0.1,  0.1,   0.20,        0.15]
+reward_weights= [0.15,    0.20,    0.30,      0.1,  0.2,   0.20,        0.15]
 
 # ─── utilities ---------------------------------------------------------------
 
