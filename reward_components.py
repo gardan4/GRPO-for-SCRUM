@@ -213,14 +213,14 @@ def r_count(completions, **kwargs):
 
 # 5 length adequacy
 
+# 5 length adequacy - peaks at 1.0, crosses 0 at 2x, reaches -1 at 4x
 def r_length(completions, **kwargs):
     """
-    Parabolic length reward:
-        • Compute µ = average token-count of reference issue titles
-        • For each generated line with n tokens:
-              diff  = |n - µ|
-              score = max(0, 1 - (diff / µ)**2)
-        • Return the mean score over all lines
+    Length reward that:
+        • Score = 1.0 when length equals target
+        • Score = 0.0 at 2x target length  
+        • Score = -1.0 at 4x target length (and stays at -1 beyond)
+        • Smooth curve throughout
     """
     refs = kwargs.get("reference_stories", [""] * len(completions))
     outs = []
@@ -241,8 +241,28 @@ def r_length(completions, **kwargs):
             continue
 
         def line_score(n):
-            diff = abs(n - mean_len)
-            return max(0.0, 1.0 - (diff / mean_len) ** 2)
+            ratio = n / mean_len
+            
+            # Three-point interpolation:
+            # (1.0, 1.0), (2.0, 0.0), (4.0, -1.0)
+            # Using cosine interpolation for smoothness
+            
+            if ratio <= 1.0:
+                # For shorter than target: gaussian-like curve
+                score = math.exp(-2 * ((ratio - 1) ** 2))
+            elif ratio <= 2.0:
+                # From 1.0 to 2.0: smooth cosine interpolation from 1 to 0
+                t = (ratio - 1.0)  # normalize to [0, 1]
+                score = 0.5 * (1 + math.cos(t * math.pi))
+            elif ratio <= 4.0:
+                # From 2.0 to 4.0: smooth cosine interpolation from 0 to -1
+                t = (ratio - 2.0) / 2.0  # normalize to [0, 1]
+                score = -0.5 * (1 - math.cos(t * math.pi))
+            else:
+                # Beyond 4x: stays at -1
+                score = -1.0
+            
+            return score
 
         scores = [line_score(len(l.split())) for l in lines]
         outs.append(sum(scores) / len(scores))   # average across lines
