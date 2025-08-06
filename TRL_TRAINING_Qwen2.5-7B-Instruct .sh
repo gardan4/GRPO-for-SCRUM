@@ -1,9 +1,9 @@
-CUDA_VISIBLE_DEVICES=2,3 accelerate launch --config_file my_accel.yaml \
-    train_trl_cot.py \
-    --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B \
-    --dataset ./data/sprint_goals_training_data-qwen-3B.jsonl \
-    --output_dir ./trl_checkpoints_lora_7B \
-    --epochs 10 \
+CUDA_VISIBLE_DEVICES=2,3 accelerate launch --config_file my_accel_deepspeed.yaml \
+    train_trl.py \
+    --model Qwen/Qwen2.5-7B-Instruct \
+    --dataset ./data/enhanced_sprint_training_data.jsonl \
+    --output_dir ./Qwen2.5-7B-Instruct \
+    --epochs 3 \
     --lr 3e-6 \
     --temperature 0.6 \
     --top_p 0.95 \
@@ -19,8 +19,9 @@ CUDA_VISIBLE_DEVICES=2,3 accelerate launch --config_file my_accel.yaml \
     --num_generations 6 \
     --bf16  \
     --num_iterations 4 \
+    --use_lora \
     --lora_dropout 0.05 \
     --lora_r 16 \
     --lora_alpha 32 \
     --use_vllm \
-    --vllm_tensor_parallel_size 1
+    --vllm_tensor_parallel_size 2

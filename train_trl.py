@@ -58,8 +58,6 @@ PROMPT_TEMPLATE = ("""
                     • Do not add extra commentary outside the stories  
                     • Consider the team context and technical stack when creating stories
                     </constraints>
-
-                    <think>
                 """)
 
 # ─── Main training script ───────────────────────────────────────────────────────
@@ -69,7 +67,7 @@ def main():
     )
     # —— core / dataset / optimisation flags (identical to your original) ———
     parser.add_argument("--model", type=str,
-                        default="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B")
+                        default="Qwen/Qwen2.5-1.5B-Instruct")
     parser.add_argument("--dataset", type=str, required=True)
     parser.add_argument("--output_dir", type=str,
                         default="./deepseek_r1_grpo_checkpoints")
@@ -250,7 +248,7 @@ def main():
             model.print_trainable_parameters()
         except AttributeError:
             pass
-    
+
     # ─── GRPO config ───────────────────────────────────────────────────────────
 
     cfg = GRPOConfig(

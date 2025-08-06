@@ -1,0 +1,23 @@
+CUDA_VISIBLE_DEVICES=1 accelerate launch --config_file my_accel.yaml \
+    train_trl_cot.py \
+    --model deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B \
+    --dataset ./data/enhanced_sprint_training_data.jsonl \
+    --output_dir ./DeepSeek-R1-Distill-Qwen-1.5B \
+    --epochs 3 \
+    --lr 3e-6 \
+    --temperature 0.6 \
+    --top_p 0.95 \
+    --max_completion_length 1024 \
+    --beta 0.1 \
+    --epsilon 0.25 \
+    --save_strategy epoch \
+    --batch_size 5 \
+    --gradient_accumulation_steps 9 \
+    --logging_steps 5 \
+    --log_completions \
+    --num_completions_to_print 1 \
+    --num_generations 6 \
+    --bf16  \
+    --num_iterations 4 \
+    --use_vllm \
+    --vllm_tensor_parallel_size 1

@@ -1,8 +1,8 @@
 #!/bin/bash
 # Auto-generated vLLM server script for GPUs: 2,3
 
-CUDA_VISIBLE_DEVICES=2,3 python -m trl.scripts.vllm_serve \
-    --model deepseek-ai/DeepSeek-R1-Distill-Qwen-7B \
+CUDA_VISIBLE_DEVICES=0,1 python -m trl.scripts.vllm_serve \
+    --model Qwen/Qwen2.5-1.5B-Instruct \
     --tensor-parallel-size 2 \
     --data-parallel-size 1 \
     --dtype bfloat16
