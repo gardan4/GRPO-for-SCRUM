@@ -2,7 +2,7 @@ CUDA_VISIBLE_DEVICES=1 accelerate launch --config_file my_accel.yaml \
     train_trl.py \
     --model Qwen/Qwen2.5-1.5B-Instruct \
     --dataset ./data/enhanced_sprint_training_data.jsonl \
-    --output_dir ./Qwen2.5-1.5B-Instruc \
+    --output_dir ./Qwen2.5-1.5B-Instruct \
     --epochs 3 \
     --lr 3e-6 \
     --temperature 0.6 \
@@ -11,8 +11,8 @@ CUDA_VISIBLE_DEVICES=1 accelerate launch --config_file my_accel.yaml \
     --beta 0.1 \
     --epsilon 0.25 \
     --save_strategy epoch \
-    --batch_size 5 \
-    --gradient_accumulation_steps 9 \
+    --batch_size 6 \
+    --gradient_accumulation_steps 12 \
     --logging_steps 5 \
     --log_completions \
     --num_completions_to_print 1 \

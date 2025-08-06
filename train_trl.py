@@ -25,40 +25,40 @@ logger = get_logger(__name__)
 
 # ─── Prompt (no <think> tag inside) ─────────────────────────────────────────────
 PROMPT_TEMPLATE = ("""
-                    <task>
-                    Generate well-formed user stories from the given sprint goal and team context.
-                    </task>
-                   
-                    <role>
-                    You are an experienced Scrum Master creating the user stories for this sprint.
-                    </role>
+<task>
+Generate well-formed user stories from the given sprint goal and team context.
+</task>
 
-                    <team_context>
-                    Tech Stack: {tech_stack}
-                    Application: {application_domain}
-                    Team: {team_composition}
-                    Sprint Focus: {sprint_focus}
-                    Product Stage: {product_stage}
-                    </team_context>
+<role>
+You are an experienced Scrum Master creating the user stories for this sprint.
+</role>
 
-                    <sprint_planning_notes>
-                    {sprint_goal_notes}
-                    </sprint_planning_notes>
+<team_context>
+Tech Stack: {tech_stack}
+Application: {application_domain}
+Team: {team_composition}
+Sprint Focus: {sprint_focus}
+Product Stage: {product_stage}
+</team_context>
 
-                    <format>
-                    Each story must be one line and follow:
-                    As a [role], I want [action], so that [benefit]
-                    Where you need to fill in the [role], [action], and [benefit] parts with
-                    appropriate content based on the sprint goal and context.
-                    </format>
+<sprint_planning_notes>
+{sprint_goal_notes}
+</sprint_planning_notes>
 
-                    <constraints>
-                    • Use exactly one line per story  
-                    • No headings, markdown, or bullet characters  
-                    • Do not add extra commentary outside the stories  
-                    • Consider the team context and technical stack when creating stories
-                    </constraints>
-                """)
+<format>
+Each story must be one line and follow:
+As a [role], I want [action], so that [benefit]
+Where you need to fill in the [role], [action], and [benefit] parts with
+appropriate content based on the sprint goal and context.
+</format>
+
+<constraints>
+• Use exactly one line per story  
+• No headings, markdown, or bullet characters  
+• Do not add extra commentary outside the stories  
+• Consider the team context and technical stack when creating stories
+</constraints>
+""")
 
 # ─── Main training script ───────────────────────────────────────────────────────
 def main():
