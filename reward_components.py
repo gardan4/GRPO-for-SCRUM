@@ -213,13 +213,13 @@ def r_count(completions, **kwargs):
 
 # 5 length adequacy
 
-# 5 length adequacy - peaks at 1.0, crosses 0 at 2x, reaches -1 at 4x
+# 5 length adequacy - peaks at 1.0, crosses 0 at 2x, reaches -4
 def r_length(completions, **kwargs):
     """
     Length reward that:
         • Score = 1.0 when length equals target
         • Score = 0.0 at 2x target length  
-        • Score = -1.0 at 4x target length (and stays at -1 beyond)
+        • Score = -4.0 at 4x target length (and stays at -4 beyond)
         • Smooth curve throughout
     """
     refs = kwargs.get("reference_stories", [""] * len(completions))
@@ -244,7 +244,7 @@ def r_length(completions, **kwargs):
             ratio = n / mean_len
             
             # Three-point interpolation:
-            # (1.0, 1.0), (2.0, 0.0), (4.0, -1.0)
+            # (1.0, 1.0), (2.0, 0.0), (4.0, -4.0)
             # Using cosine interpolation for smoothness
             
             if ratio <= 1.0:
@@ -255,12 +255,12 @@ def r_length(completions, **kwargs):
                 t = (ratio - 1.0)  # normalize to [0, 1]
                 score = 0.5 * (1 + math.cos(t * math.pi))
             elif ratio <= 4.0:
-                # From 2.0 to 4.0: smooth cosine interpolation from 0 to -1
+                # From 2.0 to 4.0: smooth cosine interpolation from 0 to -4
                 t = (ratio - 2.0) / 2.0  # normalize to [0, 1]
-                score = -0.5 * (1 - math.cos(t * math.pi))
+                score = -2.0 * (1 - math.cos(t * math.pi))
             else:
-                # Beyond 4x: stays at -1
-                score = -1.0
+                # Beyond 4x: stays at -4
+                score = -4.0
             
             return score
 
