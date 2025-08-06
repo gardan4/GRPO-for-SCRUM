@@ -100,13 +100,64 @@ def _lines_batch(completions):
 
 # 1 regex structure
 def r_regex(completions, **kwargs):
-    return [len([l for l in ls if RE_STORY.match(l)])/len(ls) if ls else 0.0 for ls in _lines_batch(completions)]
+    """
+    Reward lines that match the story pattern EXACTLY ONCE.
+    Lines with multiple stories (multiple 'as a' patterns) get zero.
+    """
+    results = []
+    for ls in _lines_batch(completions):
+        if not ls:
+            results.append(0.0)
+            continue
+        
+        valid_count = 0
+        for line in ls:
+            # Check if line matches the regex
+            if RE_STORY.match(line):
+                # Count occurrences of story markers (case-insensitive)
+                line_lower = line.lower()
+                as_a_count = len(re.findall(r'\bas\s+(?:a|an)\s+', line_lower))
+                i_want_count = len(re.findall(r'\bi\s+want\s+', line_lower))
+                so_that_count = len(re.findall(r'\bso\s+that\s+', line_lower))
+                
+                # Only count as valid if each marker appears exactly once
+                if as_a_count == 1 and i_want_count == 1 and so_that_count == 1:
+                    valid_count += 1
+                # else: multiple stories detected, no reward for this line
+        
+        results.append(valid_count / len(ls))
+    
+    return results
 
 # 2 clause presence
 def r_clause(completions, **kwargs):
-    outs=[]
+    """
+    Reward lines that have story clauses EXACTLY ONCE each.
+    Lines with multiple occurrences of any clause get zero.
+    """
+    outs = []
     for ls in _lines_batch(completions):
-        outs.append(sum((("as a" in l)+("i want" in l)+("so that" in l))/3 for l in ls)/len(ls) if ls else 0.0)
+        if not ls:
+            outs.append(0.0)
+            continue
+        
+        total_score = 0
+        for line in ls:
+            # Count occurrences of each clause
+            as_a_count = len(re.findall(r'\bas\s+a\b', line, re.I))
+            i_want_count = len(re.findall(r'\bi\s+want\b', line, re.I))
+            so_that_count = len(re.findall(r'\bso\s+that\b', line, re.I))
+            
+            # Calculate score: only give points if each clause appears 0 or 1 times
+            # If any clause appears more than once, the whole line gets 0
+            if as_a_count <= 1 and i_want_count <= 1 and so_that_count <= 1:
+                # Original scoring: presence of each clause contributes 1/3
+                line_score = (min(as_a_count, 1) + min(i_want_count, 1) + min(so_that_count, 1)) / 3.0
+                total_score += line_score
+            # else: multiple occurrences detected, score = 0 for this line
+        
+        outs.append(total_score / len(ls))
+    
     return outs
 
 # 3 coverage
