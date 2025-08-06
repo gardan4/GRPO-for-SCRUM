@@ -11,8 +11,8 @@ CUDA_VISIBLE_DEVICES=1 accelerate launch --config_file my_accel.yaml \
     --beta 0.1 \
     --epsilon 0.25 \
     --save_strategy epoch \
-    --batch_size 5 \
-    --gradient_accumulation_steps 9 \
+    --batch_size 6 \
+    --gradient_accumulation_steps 12 \
     --logging_steps 5 \
     --log_completions \
     --num_completions_to_print 1 \
