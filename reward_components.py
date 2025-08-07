@@ -163,34 +163,30 @@ def r_clause(completions, **kwargs):
 # 3 coverage
 
 def r_coverage(completions, **kwargs):
-    """
-    For each completion:
-        • embed reference issues and generated lines
-        • greedily match each issue to its most-similar unused line
-        • score = average of those best cosine similarities
-    """
+    """Coverage reward gated by structural correctness with minimum baseline."""
+    # Get base coverage scores
     refs  = kwargs.get("reference_stories", [""] * len(completions))
-    outs  = []
+    coverage_scores = []
+    clause_scores = []
     model = get_model()
-
+    
     for comp, ref in zip(completions, refs):
         lines  = story_lines(extract_final_output(comp))
         issues = split_issues(ref)
-
+        
         if not (issues and lines):
-            outs.append(0.0)
+            coverage_scores.append(0.0)
+            clause_scores.append(0.0)
             continue
-
+        
+        # Calculate base coverage score (existing logic)
         emb_i = model.encode(issues, convert_to_tensor=True)
         emb_s = model.encode(lines,  convert_to_tensor=True)
-
-        # cosine-similarity matrix  [n_issues × n_lines]
         sim_mat = torch.stack(
             [F.cosine_similarity(ie.unsqueeze(0), emb_s).cpu()
              for ie in emb_i]
         )
-
-        # greedy one-to-one matching
+        
         score_sum, used_cols = 0.0, set()
         for row in range(sim_mat.size(0)):
             sims_row = sim_mat[row].clone()
@@ -199,10 +195,33 @@ def r_coverage(completions, **kwargs):
             best_col = torch.argmax(sims_row).item()
             used_cols.add(best_col)
             score_sum += sims_row[best_col].item()
-
-        outs.append(score_sum / len(issues))
-
-    return outs
+        
+        coverage_scores.append(score_sum / len(issues))
+        
+        # Calculate clause gating score for these lines
+        line_clause_scores = []
+        for line in lines:
+            line_lower = line.lower()
+            # Check for SINGLE occurrence of each clause
+            as_a = 1 if len(re.findall(r'\bas\s+(?:a|an)\s+', line_lower)) == 1 else 0
+            i_want = 1 if len(re.findall(r'\bi\s+want\s+', line_lower)) == 1 else 0
+            so_that = 1 if len(re.findall(r'\bso\s+that\s+', line_lower)) == 1 else 0
+            
+            # Average presence (your original 0.33 per clause idea)
+            clause_score = (as_a + i_want + so_that) / 3.0
+            line_clause_scores.append(clause_score)
+        
+        avg_clause_score = sum(line_clause_scores) / len(line_clause_scores) if line_clause_scores else 0
+        clause_scores.append(avg_clause_score)
+    
+    # Apply gating with minimum baseline
+    gated_rewards = []
+    for cov, clause in zip(coverage_scores, clause_scores):
+        # Smooth gating function with minimum 10% reward
+        gate = 0.1 + 0.9 * clause  # Minimum 10% reward to avoid complete collapse
+        gated_rewards.append(cov * gate)
+    
+    return gated_rewards
 
 
 # 4 story count match
