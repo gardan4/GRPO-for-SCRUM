@@ -1,17 +1,17 @@
-CUDA_VISIBLE_DEVICES=2,3 accelerate launch --config_file my_accel_deepspeed.yaml \
+CUDA_VISIBLE_DEVICES=1 accelerate launch --config_file my_accel.yaml \
     train_trl.py \
     --model Qwen/Qwen2.5-7B-Instruct \
     --dataset ./data/enhanced_sprint_training_data.jsonl \
     --output_dir ./Qwen2.5-7B-Instruct \
     --epochs 1 \
-    --lr 2e-6 \
+    --lr 3e-6 \
     --temperature 0.6 \
     --top_p 0.95 \
     --max_completion_length 1024 \
     --beta 0.1 \
     --epsilon 0.25 \
     --save_strategy epoch \
-    --batch_size 2 \
+    --batch_size 4 \
     --gradient_accumulation_steps 12 \
     --logging_steps 5 \
     --log_completions \
