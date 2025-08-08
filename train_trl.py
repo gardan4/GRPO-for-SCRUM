@@ -312,7 +312,6 @@ def main():
     #     prefix_allowed_tokens_fn=prefix_allowed_tokens,   # ← forces <think>\n
     # )
 
-    logger.info("Start training"); trainer.train(); logger.info("Done!")
 
 if __name__=="__main__":
     main()
